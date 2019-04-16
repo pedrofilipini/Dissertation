@@ -1301,4 +1301,81 @@ plot(ice.bcf.bart.SREGION.4,
      ylab = "Partial Y - Centered")
 dev.off()
 
-plot(ice.bcf.bart.LASTAGE, centered = T, color_by = 3)
+png("smoke_cice_relat_3.png", width = 7, height = 7, units = 'in', res = 100)
+plot(ice.bcf.bart.LASTAGE, 
+     plot_orig_pts_preds = F, 
+     centered = T,
+     color_by = 3,
+     ylab = "Partial Y - Centered",
+     xlab = "LASTAGE colored by MALE")
+dev.off()
+
+png("smoke_cice_relat_2.png", width = 7, height = 7, units = 'in', res = 100)
+plot(ice.bcf.bart.LASTAGE, 
+     plot_orig_pts_preds = F, 
+     centered = T,
+     color_by = 8,
+     ylab = "Partial Y - Centered",
+     xlab = "LASTAGE colored by marital.1")
+dev.off()
+
+png("smoke_cice_relat_1.png", width = 7, height = 7, units = 'in', res = 100)
+plot(ice.bcf.bart.LASTAGE, 
+     plot_orig_pts_preds = F, 
+     centered = T,
+     color_by = 21,
+     ylab = "Partial Y - Centered",
+     xlab = "LASTAGE colored by POVSTALB.1")
+dev.off()
+
+
+ice.bcf.bart.LASTAGEaux <- ice.bcf.bart.LASTAGE
+ice.bcf.bart.LASTAGEaux$Xice[,3] <- ice.bcf.bart.LASTAGEaux$Xice[,3]*5+ice.bcf.bart.LASTAGEaux$Xice[,8]*7
+
+png("smoke_cice_relat_4.png", width = 7, height = 7, units = 'in', res = 100)
+plot(ice.bcf.bart.LASTAGEaux,
+     plot_orig_pts_preds = F, 
+     centered = T,
+     color_by = 3,
+     ylab = "Partial Y - Centered",
+     xlab = "LASTAGE colored by MALE and marital.1")
+dev.off()
+
+png("smoke_cice_LASTAGE_cut.png", width = 7, height = 7, units = 'in', res = 100)
+plot(ice.bcf.bart.LASTAGE,
+     centered = T,
+     ylab = "Partial Y - Centered")
+abline(v = 45.5, col = "red", lwd = 2)
+abline(v = 53.5, col = "red", lwd = 2)
+abline(v = 64.5, col = "red", lwd = 2)
+abline(v = 73.5, col = "red", lwd = 2)
+dev.off()
+
+
+
+
+
+#BCF
+df_bcf2 <- data.frame(
+  cm= apply(fitbcf$tau,2,median),
+  cl= apply(fitbcf$tau,2,quantile,prob=0.025),
+  cu= apply(fitbcf$tau,2,quantile,prob=0.975),
+  LASTAGE = data$LASTAGE
+)
+df_bcf2 <- df_bcf2 %>% arrange(cm)
+df_bcf2 <- data.frame(x=1:n,df_bcf2)
+
+pdf("smoke_bcf_new.pdf")
+plot(df_bcf2$x[!(df_bcf2$LASTAGE<46)], df_bcf2$cm[!(df_bcf2$LASTAGE<46)],
+     ylim = c(-0.4,0.6),
+     xlim = c(0,7000),
+     ylab = "Treatment Effect",
+     xlab = "Index")
+points(df_bcf2$x[!(df_bcf2$LASTAGE<46)], df_bcf2$cu[!(df_bcf2$LASTAGE<46)], pch = 16)
+points(df_bcf2$x[!(df_bcf2$LASTAGE<46)], df_bcf2$cl[!(df_bcf2$LASTAGE<46)], pch = 16)
+points(df_bcf2$x[df_bcf2$LASTAGE<46], df_bcf2$cm[df_bcf2$LASTAGE<46], pch = 16, col = "blue")
+points(df_bcf2$x[df_bcf2$LASTAGE<46], df_bcf2$cu[df_bcf2$LASTAGE<46], pch = 16, col = "blue")
+points(df_bcf2$x[df_bcf2$LASTAGE<46], df_bcf2$cl[df_bcf2$LASTAGE<46], pch = 16, col = "blue")
+abline(h=0, col = "red", lty = 2, lwd = 4)
+dev.off()
+
