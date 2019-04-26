@@ -47,8 +47,8 @@ rmseATE <- function(ate, alpha){
 }
 
 #Function to create DFs of different sizes
-joinDF <- function(Var, x, i){
-  if(is.matrix(vanillaVar)==0){
+joinDF <- function(Var, x){
+  if(is.matrix(Var)==0){
     Var <- as.matrix(x)
   }else{
     Var <- cbind(Var, as.matrix(x))
@@ -209,12 +209,12 @@ results <- foreach(i=1:niters) %dopar%{
   #VanillaBART
   set.seed(seedaux)
   
-  if(.Platform$OS.type=="unix"){
-    vanilla = mc.wbart(cbind(t(x),z),y,X[,-(ncol(X)-1)],nskip = burn,ndpost = npost,keepevery = thin, 
-                       seed = seedaux, mc.cores = mc.cores.detected)
-  }else{
-    vanilla = wbart(cbind(t(x),z),y,X[,-(ncol(X)-1)],nskip = burn,ndpost = npost,keepevery = thin)
-  }  
+  #  if(.Platform$OS.type=="unix"){
+  #    vanilla = mc.wbart(cbind(t(x),z),y,X[,-(ncol(X)-1)],nskip = burn,ndpost = npost,keepevery = thin, 
+  #                       seed = seedaux, mc.cores = mc.cores.detected)
+  #  }else{
+  vanilla = wbart(cbind(t(x),z),y,X[,-(ncol(X)-1)],nskip = burn,ndpost = npost,keepevery = thin)
+  #  }  
   
   #Calculating estimated ATE
   ate_est_vanilla = vanilla$yhat.test[,1:n] - vanilla$yhat.test[,(n+1):(2*n)]
@@ -227,17 +227,17 @@ results <- foreach(i=1:niters) %dopar%{
   ate_rmse_vanilla[i] <- rmseATE(ate_est_vanilla,alpha)
   att_rmse_vanilla[i] <- rmseATE(ate_est_vanilla[,(z==1)],alpha[(z==1)])
   atc_rmse_vanilla[i] <- rmseATE(ate_est_vanilla[,(z==0)],alpha[(z==0)])
-  vanillaCount[[i]] <- joinDF(vanillaCount,PIP(vanilla),i)
+  vanillaCount[[i]] <- joinDF(vanillaCount,PIP(vanilla))
   
   #OracleBART
   set.seed(seedaux)
   
-  if(.Platform$OS.type=="unix"){
-    oracle = mc.wbart(cbind(t(x),pihat,z),y,X,nskip = burn,ndpost = npost,keepevery = thin, 
-                      seed = seedaux, mc.cores = mc.cores.detected)
-  }else{
-    oracle = wbart(cbind(t(x),pihat,z),y,X,nskip = burn,ndpost = npost,keepevery = thin)
-  }  
+  #  if(.Platform$OS.type=="unix"){
+  #    oracle = mc.wbart(cbind(t(x),pihat,z),y,X,nskip = burn,ndpost = npost,keepevery = thin, 
+  #                      seed = seedaux, mc.cores = mc.cores.detected)
+  #  }else{
+  oracle = wbart(cbind(t(x),pihat,z),y,X,nskip = burn,ndpost = npost,keepevery = thin)
+  #  }  
   
   #Calculating estimated ATE
   ate_est_oracle = oracle$yhat.test[,1:n] - oracle$yhat.test[,(n+1):(2*n)]
@@ -251,35 +251,35 @@ results <- foreach(i=1:niters) %dopar%{
   ate_rmse_oracle[i] <- rmseATE(ate_est_oracle,alpha)
   att_rmse_oracle[i] <- rmseATE(ate_est_oracle[,(z==1)],alpha[(z==1)])
   atc_rmse_oracle[i] <- rmseATE(ate_est_oracle[,(z==0)],alpha[(z==0)])
-  oracleCount[[i]] <- joinDF(oracleCount,PIP(oracle),i)
+  oracleCount[[i]] <- joinDF(oracleCount,PIP(oracle))
   
   #pihat with pbart
   set.seed(seedaux)
   
-  if(.Platform$OS.type=="unix"){
-    fitz = mc.pbart(cbind(t(x)),z,nskip = burn,ndpost = npost,keepevery = pthin, 
-                    seed = seedaux, mc.cores = mc.cores.detected)
-  }else{
-    fitz = pbart(cbind(t(x)),z,nskip = burn,ndpost = npost,keepevery = pthin)
-  }
+  #  if(.Platform$OS.type=="unix"){
+  #    fitz = mc.pbart(cbind(t(x)),z,nskip = burn,ndpost = npost,keepevery = pthin, 
+  #                    seed = seedaux, mc.cores = mc.cores.detected)
+  #  }else{
+  fitz = pbart(cbind(t(x)),z,nskip = burn,ndpost = npost,keepevery = pthin)
+  #  }
   
   pihat2 = fitz$prob.train.mean #Could use median instead
   X2 = cbind(rbind(cbind(t(x),pihat2),cbind(t(x),pihat2)),c(rep(1,n),rep(0,n)))
   colnames(X2)[ncol(X2)]="z"
   
   rmse_pbart[i] <- sqrt(mean((pihat-pihat2)^2))
-  fitzCount[[i]] <- joinDF(fitzCount,PIP(fitz),i)
+  fitzCount[[i]] <- joinDF(fitzCount,PIP(fitz))
   
   
   #PSBART
   set.seed(seedaux)
   
-  if(.Platform$OS.type=="unix"){
-    ps = mc.wbart(cbind(t(x),pihat2,z), y, X2, nskip = burn,ndpost = npost,keepevery = thin, 
-                  seed = seedaux, mc.cores = mc.cores.detected)
-  }else{
-    ps = wbart(cbind(t(x),pihat2,z), y, X2, nskip = burn,ndpost = npost,keepevery = thin)
-  }
+  #  if(.Platform$OS.type=="unix"){
+  #    ps = mc.wbart(cbind(t(x),pihat2,z), y, X2, nskip = burn,ndpost = npost,keepevery = thin, 
+  #                  seed = seedaux, mc.cores = mc.cores.detected)
+  #  }else{
+  ps = wbart(cbind(t(x),pihat2,z), y, X2, nskip = burn,ndpost = npost,keepevery = thin)
+  #  }
   
   #Calculating estimated ATE
   ate_est_ps = ps$yhat.test[,1:n] - ps$yhat.test[,(n+1):(2*n)]
@@ -295,7 +295,7 @@ results <- foreach(i=1:niters) %dopar%{
   ate_rmse_ps[i] <- rmseATE(ate_est_ps,alpha)
   att_rmse_ps[i] <- rmseATE(ate_est_ps[,(z==1)],alpha[(z==1)])
   atc_rmse_ps[i] <- rmseATE(ate_est_ps[,(z==0)],alpha[(z==0)])
-  psCount[[i]] <- joinDF(psCount,PIP(ps),i)
+  psCount[[i]] <- joinDF(psCount,PIP(ps))
   
   
   
@@ -308,12 +308,12 @@ results <- foreach(i=1:niters) %dopar%{
   #PSGLM
   set.seed(seedaux)
   
-  if(.Platform$OS.type=="unix"){
-    ps3 = mc.wbart(cbind(t(x),pihat4,z),y,X4,nskip = burn,ndpost = npost,keepevery = thin, 
-                   seed = seedaux, mc.cores = mc.cores.detected)
-  }else{
-    ps3 = wbart(cbind(t(x),pihat4,z),y,X4,nskip = burn,ndpost = npost,keepevery = thin)
-  }
+  #  if(.Platform$OS.type=="unix"){
+  #    ps3 = mc.wbart(cbind(t(x),pihat4,z),y,X4,nskip = burn,ndpost = npost,keepevery = thin, 
+  #                   seed = seedaux, mc.cores = mc.cores.detected)
+  #  }else{
+  ps3 = wbart(cbind(t(x),pihat4,z),y,X4,nskip = burn,ndpost = npost,keepevery = thin)
+  #  }
   #Estimated Treatment Effects
   ate_est_psglm = ps3$yhat.test[,1:n] - ps3$yhat.test[,(n+1):(2*n)]
   ite_est_psglm = colMeans(ps3$yhat.test[,1:n] - ps3$yhat.test[,(n+1):(2*n)])
@@ -326,7 +326,7 @@ results <- foreach(i=1:niters) %dopar%{
   ate_rmse_psglm[i] <- rmseATE(ate_est_psglm,alpha)
   att_rmse_psglm[i] <- rmseATE(ate_est_psglm[,(z==1)],alpha[(z==1)])
   atc_rmse_psglm[i] <- rmseATE(ate_est_psglm[,(z==0)],alpha[(z==0)])
-  ps3Count[[i]] <- joinDF(ps3Count,PIP(ps3),i)
+  ps3Count[[i]] <- joinDF(ps3Count,PIP(ps3))
   
   
   #pihat randomly generated
@@ -337,12 +337,12 @@ results <- foreach(i=1:niters) %dopar%{
   #PSRAND
   set.seed(seedaux)
   
-  if(.Platform$OS.type=="unix"){
-    ps4 = mc.wbart(cbind(t(x),pihat5,z),y,X5,nskip = burn,ndpost = npost,keepevery = thin, 
-                   seed = seedaux, mc.cores = mc.cores.detected)
-  }else{
-    ps4 = wbart(cbind(t(x),pihat5,z),y,X5,nskip = burn,ndpost = npost,keepevery = thin)
-  }
+  #  if(.Platform$OS.type=="unix"){
+  #    ps4 = mc.wbart(cbind(t(x),pihat5,z),y,X5,nskip = burn,ndpost = npost,keepevery = thin, 
+  #                   seed = seedaux, mc.cores = mc.cores.detected)
+  #  }else{
+  ps4 = wbart(cbind(t(x),pihat5,z),y,X5,nskip = burn,ndpost = npost,keepevery = thin)
+  #  }
   
   #Estimated Treatment Effects
   ate_est_psrand = ps4$yhat.test[,1:n] - ps4$yhat.test[,(n+1):(2*n)]
@@ -356,7 +356,7 @@ results <- foreach(i=1:niters) %dopar%{
   ate_rmse_rand[i] <- rmseATE(ate_est_psrand,alpha)
   att_rmse_rand[i] <- rmseATE(ate_est_psrand[,(z==1)],alpha[(z==1)])
   atc_rmse_rand[i] <- rmseATE(ate_est_psrand[,(z==0)],alpha[(z==0)])
-  ps4Count[[i]] <- joinDF(ps4Count,PIP(ps4),i)
+  ps4Count[[i]] <- joinDF(ps4Count,PIP(ps4))
   
   
   ####################################
@@ -366,12 +366,12 @@ results <- foreach(i=1:niters) %dopar%{
   #VanillaBART
   set.seed(seedaux)
   
-  if(.Platform$OS.type=="unix"){
-    dvanilla = mc.wbart(cbind(t(x),z),y,X[,-(ncol(X)-1)], sparse = T, nskip = burn,ndpost = npost,keepevery = thin, 
-                        seed = seedaux, mc.cores = mc.cores.detected)
-  }else{
-    dvanilla = wbart(cbind(t(x),z),y,X[,-(ncol(X)-1)], sparse = T, nskip = burn,ndpost = npost,keepevery = thin)
-  }
+  #  if(.Platform$OS.type=="unix"){
+  #    dvanilla = mc.wbart(cbind(t(x),z),y,X[,-(ncol(X)-1)], sparse = T, nskip = burn,ndpost = npost,keepevery = thin, 
+  #                        seed = seedaux, mc.cores = mc.cores.detected)
+  #  }else{
+  dvanilla = wbart(cbind(t(x),z),y,X[,-(ncol(X)-1)], sparse = T, nskip = burn,ndpost = npost,keepevery = thin)
+  #  }
   
   #Calculating estimated ATE
   date_est_vanilla = dvanilla$yhat.test[,1:n] - dvanilla$yhat.test[,(n+1):(2*n)]
@@ -384,18 +384,18 @@ results <- foreach(i=1:niters) %dopar%{
   date_rmse_vanilla[i] <- rmseATE(date_est_vanilla,alpha)
   datt_rmse_vanilla[i] <- rmseATE(date_est_vanilla[,(z==1)],alpha[(z==1)])
   datc_rmse_vanilla[i] <- rmseATE(date_est_vanilla[,(z==0)],alpha[(z==0)])
-  vanillaVar[[i]] <- joinDF(vanillaVar,dvanilla$varprob.mean,i)
-  dvanillaCount[[i]] <- joinDF(dvanillaCount,PIP(dvanilla),i)
+  vanillaVar[[i]] <- joinDF(vanillaVar,dvanilla$varprob.mean)
+  dvanillaCount[[i]] <- joinDF(dvanillaCount,PIP(dvanilla))
   
   #OracleBART
   set.seed(seedaux)
   
-  if(.Platform$OS.type=="unix"){
-    doracle = mc.wbart(cbind(t(x),pihat,z),y,X,sparse = T, nskip = burn,ndpost = npost,keepevery = thin, 
-                       seed = seedaux, mc.cores = mc.cores.detected)
-  }else{
-    doracle = wbart(cbind(t(x),pihat,z),y,X,sparse = T, nskip = burn,ndpost = npost,keepevery = thin)
-  }
+  #  if(.Platform$OS.type=="unix"){
+  #    doracle = mc.wbart(cbind(t(x),pihat,z),y,X,sparse = T, nskip = burn,ndpost = npost,keepevery = thin, 
+  #                       seed = seedaux, mc.cores = mc.cores.detected)
+  #  }else{
+  doracle = wbart(cbind(t(x),pihat,z),y,X,sparse = T, nskip = burn,ndpost = npost,keepevery = thin)
+  #  }
   
   
   #Calculating estimated ATE
@@ -410,24 +410,24 @@ results <- foreach(i=1:niters) %dopar%{
   date_rmse_oracle[i] <- rmseATE(date_est_oracle,alpha)
   datt_rmse_oracle[i] <- rmseATE(date_est_oracle[,(z==1)],alpha[(z==1)])
   datc_rmse_oracle[i] <- rmseATE(date_est_oracle[,(z==0)],alpha[(z==0)])
-  oracleVar[[i]] <- joinDF(oracleVar,doracle$varprob.mean,i)
-  doracleCount[[i]] <- joinDF(doracleCount,PIP(doracle),i)
+  oracleVar[[i]] <- joinDF(oracleVar,doracle$varprob.mean)
+  doracleCount[[i]] <- joinDF(doracleCount,PIP(doracle))
   
   #pihat with pbart
   set.seed(seedaux)
-  if(.Platform$OS.type=="unix"){
-    dfitz = mc.pbart(cbind(t(x)),z,sparse = T, nskip = burn,ndpost = npost,keepevery = pthin, 
-                     seed = seedaux, mc.cores = mc.cores.detected)
-  }else{
-    dfitz = pbart(cbind(t(x)),z,sparse = T, nskip = burn,ndpost = npost,keepevery = pthin)
-  }
+  #  if(.Platform$OS.type=="unix"){
+  #    dfitz = mc.pbart(cbind(t(x)),z,sparse = T, nskip = burn,ndpost = npost,keepevery = pthin, 
+  #                     seed = seedaux, mc.cores = mc.cores.detected)
+  #  }else{
+  dfitz = pbart(cbind(t(x)),z,sparse = T, nskip = burn,ndpost = npost,keepevery = pthin)
+  #  }
   
   dpihat2 = dfitz$prob.train.mean #Could use median instead
   
   #Calculating Number of times Variable was used
   rmse_dpbart[i] <- sqrt(mean((pihat-dpihat2)^2))
-  fitzVar <- joinDF(fitzVar,dfitz$varprob.mean,i)
-  dfitzCount <- joinDF(dfitzCount,PIP(dfitz),i)
+  fitzVar[[i]] <- joinDF(fitzVar,dfitz$varprob.mean)
+  dfitzCount[[i]] <- joinDF(dfitzCount,PIP(dfitz))
   
   dX2 = cbind(rbind(cbind(t(x),dpihat2),cbind(t(x),dpihat2)),c(rep(1,n),rep(0,n)))
   colnames(dX2)[ncol(dX2)]="z"
@@ -435,12 +435,12 @@ results <- foreach(i=1:niters) %dopar%{
   #PSBART
   set.seed(seedaux)
   
-  if(.Platform$OS.type=="unix"){
-    dps = mc.wbart(cbind(t(x),dpihat2,z), y, dX2, sparse = T, nskip = burn,ndpost = npost,keepevery = thin, 
-                   seed = seedaux, mc.cores = mc.cores.detected)
-  }else{
-    dps = wbart(cbind(t(x),dpihat2,z), y, dX2, sparse = T, nskip = burn,ndpost = npost,keepevery = thin)
-  }
+  #  if(.Platform$OS.type=="unix"){
+  #    dps = mc.wbart(cbind(t(x),dpihat2,z), y, dX2, sparse = T, nskip = burn,ndpost = npost,keepevery = thin, 
+  #                   seed = seedaux, mc.cores = mc.cores.detected)
+  #  }else{
+  dps = wbart(cbind(t(x),dpihat2,z), y, dX2, sparse = T, nskip = burn,ndpost = npost,keepevery = thin)
+  #  }
   
   #Calculating estimated ATE
   date_est_ps = dps$yhat.test[,1:n] - dps$yhat.test[,(n+1):(2*n)]
@@ -457,18 +457,18 @@ results <- foreach(i=1:niters) %dopar%{
   date_rmse_ps[i] <- rmseATE(date_est_ps,alpha)
   datt_rmse_ps[i] <- rmseATE(date_est_ps[,(z==1)],alpha[(z==1)])
   datc_rmse_ps[i] <- rmseATE(date_est_ps[,(z==0)],alpha[(z==0)])
-  psVar[[i]] <- joinDF(psVar,dps$varprob.mean,i)
-  dpsCount[[i]] <- joinDF(dpsCount,PIP(dps),i)
+  psVar[[i]] <- joinDF(psVar,dps$varprob.mean)
+  dpsCount[[i]] <- joinDF(dpsCount,PIP(dps))
   
   #PSGLM
   set.seed(seedaux)
   
-  if(.Platform$OS.type=="unix"){
-    dps3 = mc.wbart(cbind(t(x),pihat4,z),y,sparse = T, X4,nskip = burn,ndpost = npost,keepevery = thin, 
-                    seed = seedaux, mc.cores = mc.cores.detected)
-  }else{
-    dps3 = wbart(cbind(t(x),pihat4,z),y,sparse = T, X4,nskip = burn,ndpost = npost,keepevery = thin)
-  }
+  #  if(.Platform$OS.type=="unix"){
+  #    dps3 = mc.wbart(cbind(t(x),pihat4,z),y,sparse = T, X4,nskip = burn,ndpost = npost,keepevery = thin, 
+  #                    seed = seedaux, mc.cores = mc.cores.detected)
+  #  }else{
+  dps3 = wbart(cbind(t(x),pihat4,z),y,sparse = T, X4,nskip = burn,ndpost = npost,keepevery = thin)
+  #  }
   #Estimated Treatment Effects
   date_est_psglm = dps3$yhat.test[,1:n] - dps3$yhat.test[,(n+1):(2*n)]
   dite_est_psglm = colMeans(dps3$yhat.test[,1:n] - dps3$yhat.test[,(n+1):(2*n)])
@@ -481,18 +481,18 @@ results <- foreach(i=1:niters) %dopar%{
   date_rmse_psglm[i] <- rmseATE(date_est_psglm,alpha)
   datt_rmse_psglm[i] <- rmseATE(date_est_psglm[,(z==1)],alpha[(z==1)])
   datc_rmse_psglm[i] <- rmseATE(date_est_psglm[,(z==0)],alpha[(z==0)])
-  ps3Var[[i]] <- joinDF(ps3Var,dps3$varprob.mean,i)
-  dps3Count[[i]] <- joinDF(dps3Count,PIP(dps3),i)
+  ps3Var[[i]] <- joinDF(ps3Var,dps3$varprob.mean)
+  dps3Count[[i]] <- joinDF(dps3Count,PIP(dps3))
   
   #PSRAND
   set.seed(seedaux)
   
-  if(.Platform$OS.type=="unix"){
-    dps4 = mc.wbart(cbind(t(x),pihat5,z),y,X5,sparse = T, nskip = burn,ndpost = npost,keepevery = thin, 
-                    seed = seedaux, mc.cores = mc.cores.detected)
-  }else{
-    dps4 = wbart(cbind(t(x),pihat5,z),y,X5,sparse = T, nskip = burn,ndpost = npost,keepevery = thin)
-  }
+  #  if(.Platform$OS.type=="unix"){
+  #    dps4 = mc.wbart(cbind(t(x),pihat5,z),y,X5,sparse = T, nskip = burn,ndpost = npost,keepevery = thin, 
+  #                    seed = seedaux, mc.cores = mc.cores.detected)
+  #  }else{
+  dps4 = wbart(cbind(t(x),pihat5,z),y,X5,sparse = T, nskip = burn,ndpost = npost,keepevery = thin)
+  #  }
   
   #Estimated Treatment Effects
   date_est_psrand = dps4$yhat.test[,1:n] - dps4$yhat.test[,(n+1):(2*n)]
@@ -505,8 +505,8 @@ results <- foreach(i=1:niters) %dopar%{
   date_rmse_rand[i] <- rmseATE(date_est_psrand,alpha)
   datt_rmse_rand[i] <- rmseATE(date_est_psrand[,(z==1)],alpha[(z==1)])
   datc_rmse_rand[i] <- rmseATE(date_est_psrand[,(z==0)],alpha[(z==0)])
-  ps4Var[[i]] <- joinDF(ps4Var,dps4$varprob.mean,i)
-  dps4Count[[i]] <- joinDF(dps4Count,PIP(dps4),i)
+  ps4Var[[i]] <- joinDF(ps4Var,dps4$varprob.mean)
+  dps4Count[[i]] <- joinDF(dps4Count,PIP(dps4))
   
   ########
   #Saving#
